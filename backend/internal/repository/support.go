@@ -52,8 +52,7 @@ func (r *SupportRepository) FindUserByEmail(ctx context.Context, email string) (
 	var user model.User
 	if err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return model.User{}, fmt.Errorf("find user by email: %v",
-			api.NewError(401, "INVALID_CREDENTIALS", "邮箱或密码不正确"))
+			return model.User{}, api.NewError(401, "INVALID_CREDENTIALS", "邮箱或密码不正确")
 		}
 		return model.User{}, fmt.Errorf("find user by email: %w", err)
 	}
@@ -64,8 +63,7 @@ func (r *SupportRepository) FindUserByID(ctx context.Context, id uint) (model.Us
 	var user model.User
 	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return model.User{}, fmt.Errorf("find user by id: %v",
-			api.NewError(401, "USER_NOT_FOUND", "登录用户不存在或已停用"))
+			return model.User{}, api.NewError(401, "USER_NOT_FOUND", "登录用户不存在或已停用")
 		}
 		return model.User{}, fmt.Errorf("find user by id: %w", err)
 	}

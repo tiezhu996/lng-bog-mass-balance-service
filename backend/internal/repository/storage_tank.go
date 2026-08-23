@@ -38,8 +38,7 @@ func (r *TankRepository) Get(ctx context.Context, id uint) (model.StorageTank, e
 	var tank model.StorageTank
 	if err := r.db.WithContext(ctx).First(&tank, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return model.StorageTank{}, fmt.Errorf("get storage tank: %v",
-			api.NewError(404, "TANK_NOT_FOUND", "储罐不存在"))
+			return model.StorageTank{}, api.NewError(404, "TANK_NOT_FOUND", "储罐不存在")
 		}
 		return model.StorageTank{}, fmt.Errorf("get storage tank: %w", err)
 	}

@@ -60,8 +60,7 @@ func (r *MeasurementRepository) Get(ctx context.Context, id uint) (model.Measure
 	var snapshot model.MeasurementSnapshot
 	if err := r.db.WithContext(ctx).Preload("Tank").First(&snapshot, id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return model.MeasurementSnapshot{}, fmt.Errorf("get measurement snapshot: %v",
-			api.NewError(404, "MEASUREMENT_NOT_FOUND", "计量快照不存在"))
+			return model.MeasurementSnapshot{}, api.NewError(404, "MEASUREMENT_NOT_FOUND", "计量快照不存在")
 		}
 		return model.MeasurementSnapshot{}, fmt.Errorf("get measurement snapshot: %w", err)
 	}
