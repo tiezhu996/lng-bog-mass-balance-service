@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
@@ -66,7 +65,7 @@ func (h *MeasurementHandler) Create(c *gin.Context) {
 	if !bindJSON(c, &request) {
 		return
 	}
-	item, err := h.service.Create(context.Background(), request, actor)
+	item, err := h.service.Create(c.Request.Context(), request, actor)
 	if err != nil {
 		api.Fail(c, err)
 		return

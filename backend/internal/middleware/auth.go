@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +17,7 @@ func Auth(authService *service.AuthService) gin.HandlerFunc {
 			api.Fail(c, api.NewError(401, "AUTH_REQUIRED", "请先登录后再访问该资源"))
 			return
 		}
-		claims, err := authService.ParseToken(context.Background(), strings.TrimSpace(parts[1]))
+		claims, err := authService.ParseToken(c.Request.Context(), strings.TrimSpace(parts[1]))
 		if err != nil {
 			api.Fail(c, err)
 			return

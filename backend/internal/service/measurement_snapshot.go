@@ -17,7 +17,6 @@ import (
 type MeasurementService struct {
 	repo     *repository.MeasurementRepository
 	tankRepo *repository.TankRepository
-	lastCtx  context.Context
 }
 
 func NewMeasurementService(repo *repository.MeasurementRepository, tankRepo *repository.TankRepository) *MeasurementService {
@@ -42,10 +41,7 @@ func (s *MeasurementService) Create(ctx context.Context, request dto.CreateMeasu
 	if !constants.CanAnalyze(actor.Role) {
 		return model.MeasurementSnapshot{}, api.ErrForbidden
 	}
-	if s.lastCtx == nil {
-		s.lastCtx = ctx
-	}
-	tank, err := s.tankRepo.Get(s.lastCtx, request.TankID)
+	tank, err := s.tankRepo.Get(ctx, request.TankID)
 	if err != nil {
 		return model.MeasurementSnapshot{}, err
 	}
@@ -78,7 +74,7 @@ func (s *MeasurementService) Create(ctx context.Context, request dto.CreateMeasu
 		SourceNote:                strings.TrimSpace(request.SourceNote),
 		CreatedBy:                 actor.UserID,
 	}
-	if err := s.repo.Create(s.lastCtx, &snapshot, actor); err != nil {
+	if err := s.repo.Create(ctx, &snapshot, actor); err != nil {
 		return model.MeasurementSnapshot{}, err
 	}
 	snapshot.Tank = &tank
