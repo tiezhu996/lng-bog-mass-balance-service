@@ -71,6 +71,14 @@ func (r *TransferRepository) Get(ctx context.Context, id uint) (model.TransferOp
 func (r *TransferRepository) Create(ctx context.Context, item *model.TransferOperation, actor Actor) (err error) {
 	tx := r.db.WithContext(ctx).Begin()
 	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+		if err != nil {
+			tx.Rollback()
+			return
+		}
 		err = tx.Commit().Error
 	}()
 	var overlaps int64
@@ -99,6 +107,14 @@ func (r *TransferRepository) Create(ctx context.Context, item *model.TransferOpe
 func (r *TransferRepository) Transition(ctx context.Context, id, version uint, target, reason string, actor Actor) (updated model.TransferOperation, err error) {
 	tx := r.db.WithContext(ctx).Begin()
 	defer func() {
+		if p := recover(); p != nil {
+			tx.Rollback()
+			panic(p)
+		}
+		if err != nil {
+			tx.Rollback()
+			return
+		}
 		err = tx.Commit().Error
 	}()
 	var before model.TransferOperation

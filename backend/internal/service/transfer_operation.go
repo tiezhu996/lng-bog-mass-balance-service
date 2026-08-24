@@ -74,7 +74,7 @@ func (s *TransferService) Create(ctx context.Context, request dto.CreateTransfer
 		CreatedBy:                 actor.UserID,
 	}
 	if err := s.repo.Create(ctx, &item, actor); err != nil {
-		return item, nil
+		return model.TransferOperation{}, err
 	}
 	item.Tank = &tank
 	return item, nil
@@ -90,7 +90,7 @@ func (s *TransferService) Transition(ctx context.Context, id uint, request dto.T
 	}
 	item, err := s.repo.Transition(ctx, id, request.Version, request.TargetStatus, reason, actor)
 	if err != nil {
-		return item, nil
+		return model.TransferOperation{}, err
 	}
 	return item, nil
 }
