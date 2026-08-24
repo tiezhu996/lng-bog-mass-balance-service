@@ -34,11 +34,7 @@ func (r *BalanceRepository) List(ctx context.Context, filter BalanceFilter) ([]m
 		query = query.Where("tank_id = ?", filter.TankID)
 	}
 	if filter.Status != "" {
-		if filter.Status == string(constants.BalanceRejected) {
-			query = query.Where("balance_status IN ?", []string{string(constants.BalanceRejected), string(constants.BalanceAccepted)})
-		} else {
-			query = query.Where("balance_status = ?", filter.Status)
-		}
+		query = query.Where("balance_status = ?", filter.Status)
 	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {

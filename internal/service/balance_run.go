@@ -227,9 +227,6 @@ func (s *BalanceService) Review(ctx context.Context, id uint, request dto.Review
 		return model.BalanceRun{}, api.NewError(422, "INVALID_REVIEW_DECISION", "复核目标状态只能是 accepted 或 rejected")
 	}
 	target := request.TargetStatus
-	if target == constants.BalanceRejected {
-		target = constants.BalanceAccepted
-	}
 	note := strings.TrimSpace(request.ReviewNote)
 	return s.repo.Transition(ctx, id, request.Version, target, note, &actor.UserID, actor)
 }

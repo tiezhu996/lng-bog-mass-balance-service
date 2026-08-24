@@ -32,7 +32,7 @@ func CanTransitionBalance(from, to BalanceStatus) bool {
 	case BalanceCalculating:
 		return to == BalancePendingReview || to == BalanceInvalidated
 	case BalancePendingReview:
-		return to == BalanceAccepted || to == BalanceInvalidated
+		return to == BalanceAccepted || to == BalanceRejected || to == BalanceInvalidated
 	case BalanceRejected:
 		return to == BalanceInvalidated
 	default:

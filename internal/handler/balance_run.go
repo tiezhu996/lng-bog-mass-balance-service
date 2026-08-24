@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"lng-boiloff-gas-balance/backend/internal/constants"
 	"lng-boiloff-gas-balance/backend/internal/dto"
 	"lng-boiloff-gas-balance/backend/internal/repository"
 	"lng-boiloff-gas-balance/backend/internal/service"
@@ -97,11 +96,6 @@ func (h *BalanceHandler) Review(c *gin.Context) {
 	if !bindJSON(c, &request) {
 		return
 	}
-	target := request.TargetStatus
-	if target == constants.BalanceRejected {
-		target = constants.BalanceAccepted
-	}
-	request.TargetStatus = target
 	item, err := h.service.Review(c.Request.Context(), id, request, actor)
 	if err != nil {
 		api.Fail(c, err)
