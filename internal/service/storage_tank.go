@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 
 	"gorm.io/datatypes"
@@ -114,7 +113,10 @@ func validateAndMarshalTank(minimum, maximum, nominal float64, coefficients []fl
 	if maximum <= minimum {
 		return nil, api.NewError(422, "INVALID_LEVEL_BOUNDARY", "最高液位必须大于最低液位")
 	}
-	sort.Float64s(coefficients)
+	// Coefficients are polynomial coefficients in ascending power order (constant,
+	// linear, quadratic, ...). The user-entered order is part of the calibration
+	// contract, so they must NOT be re-sorted here; reordering changes the
+	// polynomial and corrupts every downstream volume calculation.
 	curve, err := balance.NewCapacityCurve(coefficients)
 	if err != nil {
 		return nil, api.WithDetails(api.NewError(422, "INVALID_CAPACITY_CURVE", "罐容曲线系数无效"), map[string]any{"reason": err.Error()})

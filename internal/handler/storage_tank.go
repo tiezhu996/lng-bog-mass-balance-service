@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
-	"sort"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/datatypes"
 
 	"lng-boiloff-gas-balance/backend/internal/dto"
 	"lng-boiloff-gas-balance/backend/internal/service"
@@ -58,10 +55,9 @@ func (h *TankHandler) Create(c *gin.Context) {
 		api.Fail(c, err)
 		return
 	}
-	sort.Float64s(request.CapacityCurve)
-	sorted := request.CapacityCurve
-	raw, _ := json.Marshal(sorted)
-	item.CapacityCurveJSON = datatypes.JSON(raw)
+	// The service validates and marshals the curve preserving the user's
+	// coefficient order; do not re-sort or overwrite the stored JSON here, or the
+	// ascending-power polynomial contract breaks.
 	api.Success(c, http.StatusCreated, item)
 }
 
@@ -83,10 +79,6 @@ func (h *TankHandler) Update(c *gin.Context) {
 		api.Fail(c, err)
 		return
 	}
-	sort.Float64s(request.CapacityCurve)
-	sorted := request.CapacityCurve
-	raw, _ := json.Marshal(sorted)
-	item.CapacityCurveJSON = datatypes.JSON(raw)
 	api.Success(c, http.StatusOK, item)
 }
 
