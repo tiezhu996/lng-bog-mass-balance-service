@@ -69,15 +69,23 @@ func New(log *slog.Logger, authService *service.AuthService, handlers Handlers, 
 }
 
 func cors(origins []string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var allowed map[string]struct{}
-		for _, origin := range origins {
-			allowed[strings.TrimSpace(origin)] = struct{}{}
+	allowed := make(map[string]struct{}, len(origins))
+	for _, origin := range origins {
+		if trimmed := strings.TrimSpace(origin); trimmed != "" {
+			allowed[trimmed] = struct{}{}
 		}
+	}
+	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
-		if _, ok := allowed[origin]; ok && origin != "" {
-			c.Header("Access-Control-Allow-Origin", origin)
-			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID")
+		if origin != "" {
+			if _, ok := allowed[origin]; ok {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Vary", "Origin")
+				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-ID")
+				c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+			} else {
+				c.Header("Vary", "Origin")
+			}
 		}
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)

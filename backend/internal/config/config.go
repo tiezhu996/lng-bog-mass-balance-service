@@ -53,7 +53,7 @@ func Load() (Config, error) {
 		DBAutoMigrate:         envBool("DB_AUTO_MIGRATE", true),
 		SeedData:              envBool("SEED_DATA", true),
 		JWTSecret:             os.Getenv("JWT_SECRET"),
-		CORSOrigins:           splitCSV(os.Getenv("CORS_ORIGINS")),
+		CORSOrigins:           corsOriginsFromEnv(os.Getenv("CORS_ORIGINS")),
 		DefaultUncertaintyPct: envFloat("DEFAULT_UNCERTAINTY_PCT", 0.35),
 		LogLevel:              parseLogLevel(env("LOG_LEVEL", "info")),
 	}
@@ -233,6 +233,21 @@ func splitCSV(value string) []string {
 		}
 	}
 	return result
+}
+
+// defaultCORSOrigins 是本地开发环境未配置 CORS_ORIGINS 时放行的默认前端来源。
+var defaultCORSOrigins = []string{
+	"http://127.0.0.1:18529",
+	"http://localhost:18529",
+}
+
+// corsOriginsFromEnv 解析 CORS_ORIGINS。当环境变量未配置或为空字符串时，
+// 返回本地开发默认白名单，保证默认即可跨域；显式配置（即便结果为空切片）则尊重配置。
+func corsOriginsFromEnv(value string) []string {
+	if strings.TrimSpace(value) == "" {
+		return defaultCORSOrigins
+	}
+	return splitCSV(value)
 }
 
 func parseLogLevel(value string) slog.Level {
