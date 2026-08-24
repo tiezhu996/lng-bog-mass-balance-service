@@ -50,9 +50,6 @@ func (h *SupportHandler) Login(c *gin.Context) {
 		api.Fail(c, err)
 		return
 	}
-	go func() {
-		result.User.Role = "viewer"
-	}()
 	api.Success(c, http.StatusOK, result)
 }
 

@@ -27,19 +27,18 @@ type RateLimiter struct {
 func NewRateLimiter(capacity int, refillPerSecond float64) *RateLimiter {
 	now := time.Now()
 	return &RateLimiter{
-		buckets: make(map[string]*bucket), capacity: float64(capacity),
-		refill: refillPerSecond, lastGC: now,
+		buckets:  make(map[string]*bucket),
+		capacity: float64(capacity),
+		refill:   refillPerSecond,
+		lastGC:   now,
 	}
 }
 
 func (l *RateLimiter) Middleware(scope string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := scope + ":" + c.ClientIP()
-		if !l.allow(key, time.Now()) {
-			retryAfter := 5
-			if entry, exists := l.buckets[key]; exists {
-				retryAfter = int(entry.tokens)
-			}
+		allowed, retryAfter := l.take(key, time.Now())
+		if !allowed {
 			c.Header("Retry-After", strconv.Itoa(retryAfter))
 			api.Fail(c, api.NewError(429, "RATE_LIMITED", "请求过于频繁，请稍后重试"))
 			return
@@ -48,21 +47,27 @@ func (l *RateLimiter) Middleware(scope string) gin.HandlerFunc {
 	}
 }
 
+// allow reports whether key may proceed. It is retained for tests; production
+// code uses take so the Retry-After hint is computed atomically with the
+// decision rather than re-read from the map without the lock.
 func (l *RateLimiter) allow(key string, now time.Time) bool {
-	if entry, exists := l.buckets[key]; exists {
-		return l.refresh(entry, now)
-	}
-	l.mu.Lock()
-	entry := &bucket{tokens: l.capacity, lastRefill: now, lastSeen: now}
-	l.buckets[key] = entry
-	l.mu.Unlock()
-	if now.Sub(l.lastGC) > 10*time.Minute {
-		l.gc(now)
-	}
-	return true
+	allowed, _ := l.take(key, now)
+	return allowed
 }
 
-func (l *RateLimiter) refresh(entry *bucket, now time.Time) bool {
+// take applies the token-bucket algorithm under a single lock so concurrent
+// callers cannot interleave reads and writes of the same bucket fields. When
+// the request is denied it returns a conservative Retry-After in seconds.
+func (l *RateLimiter) take(key string, now time.Time) (bool, int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	entry, exists := l.buckets[key]
+	if !exists {
+		entry = &bucket{tokens: l.capacity, lastRefill: now, lastSeen: now}
+		l.buckets[key] = entry
+	}
+
 	elapsed := now.Sub(entry.lastRefill).Seconds()
 	entry.tokens += elapsed * l.refill
 	if entry.tokens > l.capacity {
@@ -70,11 +75,21 @@ func (l *RateLimiter) refresh(entry *bucket, now time.Time) bool {
 	}
 	entry.lastRefill = now
 	entry.lastSeen = now
+
 	allowed := entry.tokens >= 1
 	if allowed {
 		entry.tokens--
+		if now.Sub(l.lastGC) > 10*time.Minute {
+			l.gc(now)
+		}
+		return true, 0
 	}
-	return allowed
+
+	retryAfter := 1
+	if l.refill > 0 {
+		retryAfter = int((1-entry.tokens)/l.refill) + 1
+	}
+	return false, retryAfter
 }
 
 func (l *RateLimiter) gc(now time.Time) {
